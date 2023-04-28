@@ -10,6 +10,7 @@
   </head>
 
   <!--add keyboard accessibility to all links/buttons-->
+
   <body>
     <header>
       <h6 id="highscores">View Highscores</h6>
@@ -18,13 +19,29 @@
     <section class="game">
       <article id="intro">
         <h1>Coding Quiz Challenge</h1>
-        <p>Try to answer the following code-related questions within the time limit. Keep in mind that incorrect answers will penalize your score/time by ten seconds!</p>
+        <p>Try to answer the following code-related questions within the time limit. Keep in mind that incorrect answers
+          will penalize your score/time by ten seconds!</p>
         <button class="button" id="start">Start Quiz</button>
       </article>
       <article id="quiz">
         <h3 id="question-title"></h3>
         <section id="button-zone"></section>
       </article>
+    </section>
+    <section id="end-screen" class="game">
+      <h2>All Done!</h2>
+      <p id="final-score"></p>
+      <form id="initials-form">
+        <label for="initials">Enter intitials:</label>
+        <input type="text" id="initials" maxlength="2" required />
+        <button type="submit" id="submit-initials">Submit</button>
+      </form>
+    </section>
+    <section id="high-scores-screen" class="game">
+      <h2>High Scores</h2>
+      <ul id="high-scores-list"></ul>
+      <button id="go-back">Go Back</button>
+      <button id="clear-high-scores">Clear High Scores</button>
     </section>
     <script src="./assets/script.js"></script>
   </body>

@@ -1,18 +1,36 @@
-/* The first screen displays an article with ID 'intro' to the 'quiz'. This 'let' targets the 'intro' article so that it can be populated by new content later. */
+/* We want the first screen of our 'quiz' to display the article
+with ID 'intro' (in the html), so here we're targetting that ID with
+a 'querySelector'. */
 let introArticle = document.querySelector('#intro');
 
-/* We want new content to show in the html 'document' when the 'start' button shown on the 'intro' screen is clicked, so we use a 'querySelector' to target the button with ID 'start'. */
-let startButton = document.querySelector('#start');
+/* Here, we're targetting the 'button' with ID = 'start' in the html
+with a 'querySelector'. We're asking  it 'listen' for the event of a
+'click' on this button, at which point, functions that will 'startTimer'
+and 'we want new content to show in the html 'document' when the 'start'
+button shown on the 'intro' screen is clicked, so we use a 'querySelector'
+to target the button with ID 'start'. */
 
-/* Similarly, we create a 'querySelector' that updates the contents of the <section> with class 'game' in the html with the appropriate content (i.e., switching from displaying the 'intro' screen to the questions of the quiz themselves). */
+/*These 'let' declarations use a 'querySelector' to target the elements named between
+the ( ) for each in the html, so that they can be updated as the quiz progresses.*/
 let gameSection = document.querySelector('.game');
-
-/* One more 'let' uses a 'querySelector' to target the <article> with ID 'quiz', so that it can be dynamically updated with new content (i.e., the  questions and their answers), depending on the user's progress through the array of 5 questions they'll be asked.*/
 let quizArticle = document.querySelector('#quiz');
 
-let currentQuestion = 0;
+/*This declaration gives the JS access to the element 'time' in our
+html, which will eventually keep track of the time/score of the quiz.
+Here, the inintial time is also set to 75 seconds.*/
+let timeElement = document.getElementById('time');
+let timeRemaining = 75;
 
-/* We declare a new 'object' called 'questions' that holds our array of questions and answers. Each of our 5 questions is made of essentially 3 parts: 1) The question itself. 2) The answers from which the user can choose and 3) The correct answer. 'title' is simply a string. It shows the user the question, in plain text. 'choices' holds an array of the options the user can choose as their answer. 'correct' assigns the correct answer. Later in this code, the value of 'correct' will be directly compared to the user's choice on each question.*/
+/*Here, 'quizEnded' is set to 'false', to prevent the 'end-screen'
+content (present in the html) from showing prematurely. 'timerInterval'
+is also being declared here so that other functions like 'setInterval',
+which is used to decrement the time at the rate of our choosing. */
+let quizEnded = false;
+
+/*Here, we establish each of our 5 questions, their possible answers and the correct
+answer, which form the 'objects' of our 'questions' array. The strings shown for 
+'correct' here will later be compared to the user's choice, to determine whether or
+not they chose the correct answer on each question.*/
 let questions = [
     {
         title: 'Commonly used data types DO NOT include:',
@@ -42,101 +60,195 @@ let questions = [
 
 ];
 
-/* We then create a function that 'starts' the 'Quiz' when the user clicks the 'startButton'. The <article> with ID 'quiz' is actually always present, but this function changes its initial display from 'none' (which is assigned in the css) to 'flex' when the click occurs, letting 'quiz' show on the page. Then, 'gameSection 'replaces' the 'Child' of quiz with the contents of 'quizArticle', */
-function startQuiz() {
-    quizArticle.style.display = 'flex';
-    gameSection.replaceChild(quizArticle, gameSection.firstElementChild);
-    generateQuestions();
+/*Here, we declare a variable, to give us a starting point in the array of questions,
+at the '0-indexed' (aka: 1st question) that we listed above .*/
+let currentQuestion = 0;
+
+/*This function sets up an event listener to register when a 'click' is made on a 'button'
+within 'quizArticle'. 'trim' is here to remove the 'space' that is included in the
+button name (the space between '1.' and the answer text, for example).*/
+quizArticle.addEventListener('click', function (event) {
+    if (event.target.matches('button')) {
+        checkAnswer(event.target.textContent.trim());
+    }
+});
+
+
+function checkAnswer(choice) {
+    let resultEl = document.querySelector('#result');
+    if (!resultEl) {
+        resultEl = document.createElement('p');
+        resultEl.id = 'result';
+        quizArticle.appendChild(resultEl);
+    }
+
+    let choiceText = choice.split('. ')[1];
+
+    if (choiceText === questions[currentQuestion].correct) {
+        resultEl.textContent = 'That is correct!';
+        resultEl.className = 'correct';
+
+    } else {
+        resultEl.textContent = 'That is incorrect.'
+        resultEl.className = 'incorrect';
+        if (timeRemaining >= 10) {
+            timeRemaining -= 10;
+        } else {
+            timeRemaining = 0;
+        }
+
+        updateTimeElement();
+    }
+
+    setTimeout(function () {
+        resultEl.remove();
+        currentQuestion++;
+        if (currentQuestion < questions.length) {
+            generateQuestions();
+        } else {
+            endQuiz();
+        }
+    }, 400);
 }
 
-/* We then 'add' an 'EventListener' to 'listen' for when a 'click' is made on the 'startButton'. When it is, the article with ID 'intro' is replaced by the article with ID 'quiz'. */
-startButton.addEventListener('click', startQuiz);
-
-/* Here, we target our 'Time:' element in the html.*/
-// var timerEl=document.getElementById('time');
-
-// function countdown ( {
-//     var timeLeft = 75;
-//     var timeLeft--;
-//     timerEl.textContent=timeLeft 
-// })
-
-
-/*This function 'generates' each of the 5 the 'Questions', by using 'getElementById' to target the <h3> with ID 'question-title' and <section> with ID 'button-zone' in the html and populating them with the strings stored in our 'questions' array. It starts both the 'questionTitle' and 'questionChoice' at the first item in the corresponding arrays that are assigned above (index 0).*/
+/*'generateQuestions' helps to make our 'questions' appear. It retrieves the elements
+with IDs in the html matching what appears between the ( ) and respectively assigns
+them to the 2 variables, 'questionTitleEl' and 'questionChoicesEl'. The 'textContent'
+property of 'questionTitleEl' gets set to the 'title' property of our 'currentQuestion'.
+'questionChoicesEl' clears the 'button-zone' of any answers previously given by the
+user, in preparation for loading the next set of buttons. Within the 'for' loop, we
+'create' an 'Element' called 'button' in the html 'document'. Since there are
+consistently 4, numbered-options for each of the 5 questions, the 'for' loop here is set
+to add the 'textContent' of 'i' (currently set to '0', but then is incremented to '+1',
+and then by 1, each time the loop runs, until it reaches the 'length' of questions,
+which is 4) — as well as add a '.' after the answer's number — to each of the buttons,
+so they are numbered consistenly. Upon 'onclick', 'tempBtn' assigns the 'checkAnswer'
+function we established as the event handler, invoking 'checkAnswer' when the button is
+clicked. 'tempBtn' then gets assigned a 'className' of 'button', so it can be styled
+by our CSS. Finally, 'tempBtn' gets 'appended' as a 'Child' of the 'questionChoicesEl'
+making our choice buttons visible to the user.*/
 function generateQuestions() {
     let questionTitleEl = document.getElementById('question-title');
-    questionTitleEl.textContent = questions[0].title;
+    questionTitleEl.textContent = questions[currentQuestion].title;
     let questionChoicesEl = document.getElementById('button-zone');
-    for (let i = 0; i < questions[0].choices.length; i++) {
+    questionChoicesEl.innerHTML = '';
+
+    for (let i = 0; i < questions[currentQuestion].choices.length; i++) {
         let tempBtn = document.createElement('button');
-        tempBtn.textContent = i + 1 + '. ' + questions[0].choices[i];
+        tempBtn.textContent = i + 1 + '. ' + questions[currentQuestion].choices[i];
         tempBtn.onclick = checkAnswer;
         tempBtn.className = 'button';
         questionChoicesEl.appendChild(tempBtn);
     }
 }
 
-quizArticle.addEventListener('click', function (event) {
-    if (event.target.matches('button')) {
-        checkAnswer(event.target.textContent.trim());
-        generateQuestions();
-    }
-});
-
-function checkAnswer(choice) {
-    if (choice === questions[currentQuestion].correct) {
-        let resultEl = document.createElement('p');
-        resultEl.textContent = 'You are correct!';
-        resultEl.className = 'result';
-        quizArticle.appendChild(resultEl);
-    } else {
-        let resultEl = document.createElement('p');
-        resultEl.textContent = 'That is incorrect.';
-        resultEl.className = 'result';
-        quizArticle.appendChild(resultEl);
-    }
-    currentQuestion++;
-    if(currentQuestion < questions.length) {
-        generateQuestions();
-    } else {
-        endQuiz();
-    }
+/*The 'startQuiz' function overwrites the previous display value of
+'quizArticle' (set to 'none' in the CSS, so that it will remain hidden
+until the quiz begins) and gives it a display of 'flex' once the quiz
+begins. It sets the 'gameSection' to an 'empty string', so that section
+will be cleared and essentially makes our questions and answer options
+viewable by the user.*/
+function startQuiz() {
+    quizArticle.style.display = 'flex';
+    gameSection.innerHTML = '';
+    gameSection.appendChild(quizArticle);
+    generateQuestions();
 }
 
+/*When called, this function will 'start' the 'Timer' that is displayed in the
+top-right corner of the quiz when called. 'setInterval' declares that the
+initial value of 'timeRemaining' (set at '75' above) should be
+decremented by '1' per second (shown in milliseconds, 1000 here)
+when the quiz begins. It 'updates' the 'TimeElement' based on the
+results of the 'if' statement, which compares 'timeRemaining' to 0
+and also takes into account 'quizEnded', which is triggered when
+the user has answered the 5th question. This will 'stop' the 'Timer'
+and 'display' the 'Message' in ( ) to the user, on-screen.*/
+function startTimer() {
+    updateTimeElement();
+    timerInterval = setInterval(function () {
+        timeRemaining--;
+        updateTimeElement();
+        if (timeRemaining <= 0 || quizEnded) {
+            stopTimer();
+            displayMessage("Time's up!");
+        }
+    }, 1000);
+}
 
+/*We target the element with ID 'start' in the html and assign that as the 
+value to 'startButton'*/
+let startButton = document.querySelector('#start');
+startButton.addEventListener('click', function () {
+    startTimer();
+    startQuiz();
+});
 
-//This proves that it is calling the function in the console.
-// function checkAnswer() {
-//     let userChoice = this.textContent;
-//     let correctAnswer = questions[0].correct;
-//     if (userChoice === correctAnswer) {
-//         console.log('You are correct!');
+/*This function will 'stop' the 'Timer'*/
+function stopTimer() {
+    clearInterval(timerInterval);
+}
 
-//     };
-// }
+/*This function 'updates' the ' 'Time: ' element in the html, displaying
+the 'timeRemaining' countdown.*/
+function updateTimeElement() {
+    timeElement.textContent = 'Time: ' + timeRemaining;
+}
 
-// highscores.style.display = 'none';
-// time.style.display = 'none';
+let endScreen = document.getElementById('end-screen');
+let highScoresScreen = document.getElementById('high-scores-screen');
+let highScoresList = document.getElementById('high-scores-list');
+let goBackButton = document.getElementById('go-back');
+let clearHighScores = document.getElementById('clear-high-scores');
 
-// let button1 = document.getElementById('b1');
-// let button2 = document.getElementById('b2');
-// let button3 = document.getElementById('b3');
-// let button4 = document.getElementById('b4');
+function endQuiz() {
+    quizArticle.style.display = 'none';
+    let finalScore = document.getElementById('final-score');
+    let initialsInput = document.getElementById('initials');
+    let submitButton = document.getElementById('submit-initials');
 
-/* We do this so that we can use a querySelector to 'listen' for a 'click' on each, which is set up below. */
+    endScreen.style.display = 'flex';
 
-/* We also declare more 'selectors' to target elements in the html that we want to change with user interaction. 'gameSection' shows the Javascript what we consider to be the area that the 'game' itself will take place'. This area will populate with new 'articles', with IDs 'quiz–q5' (one ID assigned to the content for each question in the quiz).*/
+    let score = timeRemaining;
+    finalScore.textContent = 'Your final score is ' + score;
 
-/* Here, we declare the 4 buttons that will appear on all of our question 'screens'. */
+    submitButton.addEventListener('click', function (event) {
+        event.preventDefault();
+        let initials = initialsInput.value;
 
+        let message = 'Thank you for submitting your initials, ' + initials;
+        displayMessage(message);
 
+        saveHighScore(initials, score);
 
-//Need all ID=q to update with 'Correct' or 'Wrong' message, depending on answer, with a gray hz line separating this text from the question section above it.
+        showHighScores();
+        quizEnded = true;
+    });
+}
 
-//Need set-up Timer.
+function showHighScores() {
+    introArticle.style.display = 'none';
+    quizArticle.style.display = 'none';
+    endScreen.style.display = 'none';
+    highScoresScreen.style.display = 'block';
 
-//Need create 'done' screen.
+    let highScores = retrieveHighScores();
+    displayHighscores(highScores);
+}
 
-//Need create field for initials entry, with submit button. Need to store input from this field so that initials and scores are viewable.
+function retrieveHighScores() {
+    return [
+        { initials: 'AB', score: 100 },
+        { initials: 'CD', score: 90 },
+        { initials: 'EF', score: 80 },
+    ];
+}
 
-//Need to view list of initials and scores when 'View high scores' clicked on 'into' screen.
+function displayHighscores(scores) {
+    highScoresList.innerHTML = '';
+    scores.forEach((score, index) => {
+        let listItem = document.createElement('li');
+        listItem.textContent = (index + 1) + '. ' + score.initials + ' ' + score.score;
+        highScoresList.appendChild(listItem);
+    });
+}
